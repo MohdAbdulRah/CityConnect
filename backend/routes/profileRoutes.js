@@ -1,5 +1,5 @@
 const express = require('express');
-const { getProfile,updateProfileImage,updateLocation,addNumber, addRating} = require('../controllers/profileController');
+const { getProfile,updateProfileImage,updateLocation,addNumber,addRating} = require('../controllers/profileController');
 
 const router = express.Router();
 router.get('/', getProfile);

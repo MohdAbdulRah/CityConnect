@@ -41,11 +41,12 @@ exports.getAllTasks = async (req, res) => {
     const userId = req.userId; // current logged-in user
 
     const tasks = await Task.find({
-      user: { $ne: userId }, // exclude tasks created by current user
-      "applicants.user": { $ne: userId }, // exclude tasks where user already applied
+      status: "open",                 // ✅ ONLY OPEN TASKS
+      user: { $ne: userId },           // exclude own tasks
+      "applicants.user": { $ne: userId } // exclude already applied tasks
     })
       .populate("user", "name email profileImage")
-      .populate("assignedTo", "name email")
+      .populate("assignedTo", "name email profileImage")
       .sort({ createdAt: -1 });
 
     res.status(200).json(tasks);
@@ -54,6 +55,7 @@ exports.getAllTasks = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch tasks" });
   }
 };
+
 
 
 exports.applyTasks = async (req,res) => {
@@ -98,7 +100,7 @@ exports.myGivenTasks = async (req, res) => {
 
     // Fetch tasks with population
     let tasks = await Task.find({ user: userId })
-      .populate("user", "name email profileImage")         // task owner
+      .populate("user", "name email profileImage location")         // task owner
       .populate("assignedTo", "name email profileImage")   // assigned user
       .populate({
         path: "applicants.user",
@@ -240,6 +242,8 @@ exports.getGivenTaskByOwner = async (req, res) => {
     const { id } = req.params;
 
     const tasks = await Task.find({ user: id })
+      .populate("assignedTo")
+      .populate("user")
       .sort({ createdAt: -1 });
 
     return res.status(200).json({

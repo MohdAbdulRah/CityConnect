@@ -204,10 +204,17 @@ exports.getMyStuffs = async (req, res) => {
   .populate({
     path: "given",
     model: "Stuff",
-    populate: {
-      path: "interested.user",
-      model: "User",
-    }
+        populate: [
+      {
+        path: "interested.user",
+        model: "User",
+      },
+      {
+        path: "givenTo",  // populate the assigned user if stuff is given
+        model: "User",
+      },
+    ],
+
   });
 
     if (!user) {
@@ -240,10 +247,16 @@ exports.getRecievedStuffs = async (req,res) => {
     const user = await User.findById(userId).populate({
       path: "received",
       model: "Stuff",
-      populate: {
+      populate: [
+        {
         path: "owner",
         model: "User",
-      }
+      },
+      {
+        path: "givenTo",  // populate the assigned user if stuff is given
+        model: "User",
+      },
+    ]
     });
 
     if (!user) {

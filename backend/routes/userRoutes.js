@@ -7,7 +7,12 @@ router.get("/:userId", async (req, res) => {
   const { userId } = req.params;
   console.log("Fetching user with ID:", userId);
   try {
-    const user = await User.findById(userId);
+    const user = await User.findById(userId)
+     .populate("givenTasks")       // populate givenTasks
+  .populate("receivedTasks")    // populate receivedTasks
+  .populate("given")            // optional: populate given stuffs
+  .populate("received")         // optional: populate received stuffs
+  .populate("posts");     
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }

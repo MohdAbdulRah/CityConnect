@@ -158,6 +158,9 @@ exports.addRating = async (req,res) => {
        if(userId == req.userId.toString()){
           res.status(400).json({success : false,message : "You cant rate yourself"})
        }
+        if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ success: false, message: "Invalid rating value" });
+    }
   const user = await User.findById(userId);
   if(user.rating != 0)user.rating = Math.round(((user.rating + rating) / 2) * 10) / 10;
   else user.rating = rating;
