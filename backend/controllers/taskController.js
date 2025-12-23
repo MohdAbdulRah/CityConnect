@@ -105,7 +105,7 @@ exports.myGivenTasks = async (req, res) => {
       .populate({
         path: "applicants.user",
         model: "User",
-        select: "name email profileImage"                  // applicant details
+        select: "_id name email profileImage"                  // applicant details
       });
 
     // Define custom status order
