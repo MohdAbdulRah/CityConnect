@@ -6,7 +6,7 @@ const mongoose = require("mongoose")
 exports.getAllPost = async (req, res) => {
   try {
     const posts = await Post.find({ owner: { $ne: req.userId } })
-      .populate("owner", "name email profileImage isVerified")
+      .populate("owner", "_id name email profileImage isVerified")
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -98,7 +98,7 @@ exports.getUserPosts = async (req, res) => {
     }
 
     const posts = await Post.find({ owner: id })
-      .populate("owner", "name email profileImage")
+      .populate("owner", "_id name email profileImage")
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
