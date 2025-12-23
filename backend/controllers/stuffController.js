@@ -33,7 +33,7 @@ exports.getAllStuff = async (req, res) => {
     const total = await Stuff.countDocuments(query);
 
     const stuff = await Stuff.find(query)
-      .populate("owner", "name email profileImage isVerified")
+      .populate("owner", "_id name email profileImage isVerified")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
