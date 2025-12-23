@@ -45,8 +45,8 @@ exports.getAllTasks = async (req, res) => {
       user: { $ne: userId },           // exclude own tasks
       "applicants.user": { $ne: userId } // exclude already applied tasks
     })
-      .populate("user", "name email profileImage")
-      .populate("assignedTo", "name email profileImage")
+      .populate("user", "_id name email profileImage")
+      .populate("assignedTo", "_id name email profileImage")
       .sort({ createdAt: -1 });
 
     res.status(200).json(tasks);
