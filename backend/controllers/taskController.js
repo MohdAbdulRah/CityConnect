@@ -101,7 +101,7 @@ exports.myGivenTasks = async (req, res) => {
     // Fetch tasks with population
     let tasks = await Task.find({ user: userId })
       .populate("user", "name email profileImage location")         // task owner
-      .populate("assignedTo", "name email profileImage")   // assigned user
+      .populate("assignedTo", "_id name email profileImage")   // assigned user
       .populate({
         path: "applicants.user",
         model: "User",
