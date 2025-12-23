@@ -137,8 +137,8 @@ exports.myRecvTasks = async (req, res) => {
     const userId = req.userId;
 
     const tasks = await Task.find({ assignedTo: userId })
-      .populate("user", "name email profileImage")       // Task creator
-      .populate("assignedTo", "name email profileImage") // Assignee
+      .populate("user", "_id name email profileImage")       // Task creator
+      .populate("assignedTo", "_id name email profileImage") // Assignee
       .sort({ createdAt: -1 });                          // latest first
 
     return res.status(200).json({
