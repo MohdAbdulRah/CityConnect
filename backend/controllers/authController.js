@@ -5,12 +5,18 @@ const nodemailer = require("nodemailer");
 
 // gmail transporter
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
   auth: {
     user: process.env.MAIL_USER,
     pass: process.env.MAIL_PASS,
+  },
+  tls: {
+    rejectUnauthorized: false
   }
 });
+
 
 // generate OTP
 function generateOTP() {
@@ -20,6 +26,13 @@ function generateOTP() {
 // ---------------- SIGNUP ----------------
 exports.signup = async (req, res) => {
   try {
+    transporter.verify((error, success) => {
+      if (error) {
+        return res.json({er : error});
+      } else {
+        return res.json({message : "SMTP READY"});
+      }
+    });
     const { name, email, password } = req.body;
 
     let user = await User.findOne({ email });
@@ -36,12 +49,17 @@ exports.signup = async (req, res) => {
       otpExpire: Date.now() + 5 * 60 * 1000, // 5 mins
     });
 
+    try {
     await transporter.sendMail({
       from: process.env.MAIL_USER,
       to: email,
       subject: "Your OTP Code",
-      html: `<h2>Your OTP Code:</h2><h1>${otp}</h1><p>Valid for 5 minutes</p>`
+      html: `<h2>Your OTP Code:</h2><h1>${otp}</h1>`
     });
+} catch (mailErr) {
+  console.log("MAIL ERROR:", mailErr);
+  return res.status(500).json({ message: "Failed to send OTP email" });
+}
 
     res.json({ success: true, message: "OTP sent to email", userId: user._id });
   } catch (err) {
