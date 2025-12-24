@@ -11,26 +11,24 @@ router.post("/verify-email", verifyEmail);
 router.post("/resend-otp", resendOtp);
 router.post("/login", login);
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
+  host: "smtp-relay.brevo.com",
   port: 587,
   secure: false,
   auth: {
-    user: process.env.MAIL_USER,
-    pass: process.env.MAIL_PASS,
+    user: "apikey",
+    pass: process.env.BREVO_API_KEY,
   },
-  tls: {
-    rejectUnauthorized: false
-  }
 });
 
-router.get("/test-mail", async (req, res) => {
+router.post("/test-mail", async (req, res) => {
+  const {email} = req.body
   try {
     await transporter.sendMail({
-      from: process.env.MAIL_USER,
-      to: process.env.MAIL_USER,
-      subject: "Test Mail",
-      text: "Hello from Render"
-    });
+  from: `"CityConnect" <${process.env.MAIL_USER}>`,
+  to: email,
+  subject: "Your OTP Code",
+  html: `<h2>Your OTP Code:</h2><h1>12345</h1>`,
+});
     res.send("Mail sent");
   } catch (e) {
     res.status(500).send(e.message);
