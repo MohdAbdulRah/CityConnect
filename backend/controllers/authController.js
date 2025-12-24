@@ -1,21 +1,8 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const nodemailer = require("nodemailer");
+const sendMail = require("../utils/sendMail");
 
-// gmail transporter
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.MAIL_USER,
-    pass: process.env.MAIL_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false
-  }
-});
 
 
 // generate OTP
@@ -25,14 +12,7 @@ function generateOTP() {
 
 // ---------------- SIGNUP ----------------
 exports.signup = async (req, res) => {
-  try {
-    transporter.verify((error, success) => {
-      if (error) {
-        return res.json({er : error});
-      } else {
-        return res.json({message : "SMTP READY"});
-      }
-    });
+
     const { name, email, password } = req.body;
 
     let user = await User.findOne({ email });
