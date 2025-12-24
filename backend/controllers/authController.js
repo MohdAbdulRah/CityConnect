@@ -30,12 +30,11 @@ exports.signup = async (req, res) => {
     });
 
     try {
-    await transporter.sendMail({
-      from: process.env.MAIL_USER,
-      to: email,
-      subject: "Your OTP Code",
-      html: `<h2>Your OTP Code:</h2><h1>${otp}</h1>`
-    });
+    await sendMail({
+  to: email,
+  subject: "Your OTP Code",
+  html: `<h2>Your OTP Code:</h2><h1>${otp}</h1><p>Valid for 5 minutes</p>`,
+});
 } catch (mailErr) {
   console.log("MAIL ERROR:", mailErr);
   return res.status(500).json({ message: "Failed to send OTP email" });
@@ -85,13 +84,11 @@ exports.resendOtp = async (req, res) => {
     await user.save();
     console.log("Generated OTP:", otp);
 
-    await transporter.sendMail({
-      from: process.env.MAIL_USER,
-      to: email,
-      subject: "Your OTP Code",
-      html: `<h2>Your OTP Code:</h2><h1>${otp}</h1>`
-    });
-
+    await sendMail({
+  to: email,
+  subject: "Your OTP Code",
+  html: `<h2>Your OTP Code:</h2><h1>${otp}</h1><p>Valid for 5 minutes</p>`,
+});
     res.json({ success: true, message: "OTP resent" });
   } catch (err) {
     res.status(500).json({ message: err.message });
