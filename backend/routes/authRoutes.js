@@ -23,7 +23,7 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-app.get("/test-mail", async (req, res) => {
+router.get("/test-mail", async (req, res) => {
   try {
     await transporter.sendMail({
       from: process.env.MAIL_USER,
