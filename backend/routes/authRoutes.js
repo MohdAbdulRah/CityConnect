@@ -1,6 +1,6 @@
 const express = require("express");
 const { signup, verifyEmail, resendOtp, login } = require("../controllers/authController");
-const transporter = require("../config/mail");
+const sendMail = require("../utils/sendMail");
 
 const router = express.Router();
 
@@ -13,12 +13,11 @@ router.post("/test-mail", async (req, res) => {
   const { email } = req.body;
 
   try {
-    await transporter.sendMail({
-      from: `"CityConnect" <${process.env.MAIL_USER}>`,
-      to: email,
-      subject: "Your OTP Code",
-      html: `<h2>Your OTP Code:</h2><h1>12345</h1>`,
-    });
+    await sendMail({
+  to: email,
+  subject: "Your OTP Code",
+  html: `<h2>Your OTP Code:</h2><h1>12345</h1><p>Valid for 5 minutes</p>`,
+});
 
     res.json({ success: true, message: "Mail sent" });
   } catch (e) {
