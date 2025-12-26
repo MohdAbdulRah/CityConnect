@@ -86,7 +86,7 @@ exports.getStuffById = async (req, res) => {
 
 exports.createStuff = async (req, res) => {
   try {
-    const { title, description, location, image } = req.body;
+    const { title, description, location, image ,lat,lng} = req.body;
 
     // Validation
     if (!title || !description || !location || !image) {
@@ -95,7 +95,15 @@ exports.createStuff = async (req, res) => {
         message: "All fields are required including image",
       });
     }
+    let coordinates;
 
+
+    // Case 1: Auto-detected location
+    coordinates = {
+      type: "Point",
+      coordinates: [lng, lat],
+    };
+  
     // Optional: Validate image URL (basic check)
     const urlRegex = /^https?:\/\/.*\.(jpeg|jpg|png|gif|webp)/i;
     if (!urlRegex.test(image)) {
@@ -110,6 +118,7 @@ exports.createStuff = async (req, res) => {
       description: description.trim(),
       location: location.trim(),
       image, // ← Just a string URL
+      coordinates,
       owner: req.userId,
     });
 
