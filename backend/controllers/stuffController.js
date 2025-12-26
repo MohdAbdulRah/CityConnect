@@ -7,62 +7,81 @@ const mongoose = require("mongoose")
 // Get all available free items (public route)
 exports.getAllStuff = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
+    const lat = Number(req.query.lat);
+    const lng = Number(req.query.lng);
+    const mongoose = require("mongoose");
 
-    const query = {
+    const userObjectId = new mongoose.Types.ObjectId(req.userId);
+
+    const matchStage = {
       status: "available",
-      owner: { $ne: req.userId },                     // Do not show user's own items
-      interested: { $not: { $elemMatch: { user: req.userId } } } // Exclude already interested items
+      owner: { $ne: userObjectId }, // ✅ FIXED
+      interested: {
+        $not: { $elemMatch: { user: userObjectId } },
+      },
     };
 
-    // Location filter
+    // Optional filters
     if (req.query.location) {
-      query.location = { 
-        $regex: req.query.location.trim(), 
-        $options: "i" 
+      matchStage.location = {
+        $regex: req.query.location.trim(),
+        $options: "i",
       };
     }
 
-    // Category filter
     if (req.query.category) {
-      query.category = req.query.category;
+      matchStage.category = req.query.category;
     }
 
-    const total = await Stuff.countDocuments(query);
+    const hasValidCoords =
+      Number.isFinite(lat) && Number.isFinite(lng);
 
-    const stuff = await Stuff.find(query)
-      .populate("owner", "_id name email profileImage isVerified")
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
+    let pipeline = [];
+
+    if (hasValidCoords) {
+      pipeline.push({
+        $geoNear: {
+          near: {
+            type: "Point",
+            coordinates: [lng, lat], // lng first
+          },
+          distanceField: "distance",
+          spherical: true,
+          query: matchStage,
+        },
+      });
+    } else {
+      pipeline.push({ $match: matchStage });
+      pipeline.push({ $sort: { createdAt: -1 } });
+    }
+
+    const stuff = await Stuff.aggregate(pipeline);
+
+    await Stuff.populate(stuff, {
+      path: "owner",
+      select: "_id name email profileImage isVerified",
+    });
 
     res.status(200).json({
       success: true,
+      geoSorted: hasValidCoords,
       count: stuff.length,
-      total,
-      page,
-      pages: Math.ceil(total / limit),
       data: stuff,
     });
-
   } catch (error) {
     console.error("Get all stuff error:", error);
     res.status(500).json({
       success: false,
       message: "Server error",
-      error: error.message,
     });
   }
 };
-
 
 // Optional: Get single item by ID
 exports.getStuffById = async (req, res) => {
   try {
     const stuff = await Stuff.findById(req.params.id)
-      .populate("owner", "name email")
+      .populate("owner", "_id name email")
       .populate("interested.user", "name");
 
     if (!stuff || stuff.status !== "available") {
