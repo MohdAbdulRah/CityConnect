@@ -26,6 +26,8 @@ const TaskSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 TaskSchema.index({ status: 1, createdAt: -1 });
+TaskSchema.index({ coordinates: "2dsphere" });
+
 const Task = mongoose.model('Task', TaskSchema);
 
 module.exports = Task;
