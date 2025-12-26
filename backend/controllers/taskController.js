@@ -5,7 +5,17 @@ exports.createTask = async (req, res) => {
   try {
     const userId = req.userId; // <-- from middleware
 
-    const { title, description, amount, urgency, address, expiryAt } = req.body;
+    const { title, description, amount, urgency, address, expiryAt,lng,lat } = req.body;
+
+    let coordinates;
+
+
+    // Case 1: Auto-detected location
+    coordinates = {
+      type: "Point",
+      coordinates: [lng, lat],
+    };
+  
 
     // 1️⃣ Create Task
     const task = await Task.create({
@@ -15,7 +25,8 @@ exports.createTask = async (req, res) => {
       amount,
       urgency,
       address,
-      expiryAt
+      expiryAt,
+      coordinates
     });
 
     // 2️⃣ Push task into user's givenTasks
@@ -38,23 +49,79 @@ exports.createTask = async (req, res) => {
 // Get all tasks
 exports.getAllTasks = async (req, res) => {
   try {
-    const userId = req.userId; // current logged-in user
+    const userObjectId = new mongoose.Types.ObjectId(req.userId);
 
-    const tasks = await Task.find({
-      status: "open",                 // ✅ ONLY OPEN TASKS
-      user: { $ne: userId },           // exclude own tasks
-      "applicants.user": { $ne: userId } // exclude already applied tasks
+    const lat = Number(req.query.lat);
+    const lng = Number(req.query.lng);
+
+    const hasValidCoords =
+      Number.isFinite(lat) && Number.isFinite(lng);
+
+    const baseMatch = {
+      status: "open",
+      user: { $ne: userObjectId },
+      applicants: { $not: { $elemMatch: { user: userObjectId } } },
+    };
+
+    let nearbyTasks = [];
+    let otherTasks = [];
+
+    // ================= NEARBY TASKS =================
+    if (hasValidCoords) {
+      nearbyTasks = await Task.aggregate([
+        {
+          $geoNear: {
+            key: "coordinates",
+            near: {
+              type: "Point",
+              coordinates: [lng, lat],
+            },
+            distanceField: "distance",
+            spherical: true,
+            query: {
+              ...baseMatch,
+              "coordinates.coordinates": { $ne: [0, 0] },
+            },
+          },
+        },
+        { $sort: { distance: 1, createdAt: -1 } },
+      ]);
+
+      await Task.populate(nearbyTasks, [
+        { path: "user", select: "_id name email profileImage" },
+        { path: "assignedTo", select: "_id name email profileImage" },
+      ]);
+    }
+
+    // ================= REMAINING TASKS =================
+    const nearbyIds = nearbyTasks.map(t => t._id);
+
+    otherTasks = await Task.find({
+      ...baseMatch,
+      _id: { $nin: nearbyIds },
     })
       .populate("user", "_id name email profileImage")
       .populate("assignedTo", "_id name email profileImage")
       .sort({ createdAt: -1 });
 
-    res.status(200).json(tasks);
+    // ================= MERGE =================
+    const tasks = [...nearbyTasks, ...otherTasks];
+
+    res.status(200).json({
+      success: true,
+      geoSorted: hasValidCoords,
+      count: tasks.length,
+      data: tasks,
+    });
   } catch (error) {
     console.error("Error fetching tasks:", error);
-    res.status(500).json({ error: "Failed to fetch tasks" });
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch tasks",
+    });
   }
 };
+
 
 
 
